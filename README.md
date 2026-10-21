@@ -9,10 +9,29 @@ Use to your liking. Just a basic mockup of how I would implement this. Many area
 ```
 Nancy Pelosi · Estimated portfolio · Volume: $237.98M
 ```
-
 Volume is calculated by the sum of each disclosed trade's amount. Disclosures report amount in 
 **ranges** (e.g. `$500,001 - $1,000,000`), so each trade is counted at the
 **midpoint** of its range by default. Low and high variants are also supported.
+
+> [!IMPORTANT]
+> The prototype for this feature only read **House** periodic transaction
+> reports, so it only covers House members. Senators and executive-branch
+> officials (e.g. the President) file through separate systems whose formats
+> were not checked. The feature should be built on the site's own trade data,
+> which already includes these filers, and the amount handling below should be
+> confirmed against their records.
+
+## Coverage
+
+Assumptions to verify per filer type:
+
+- Amounts are reported as a **range** (`amountMin` to `amountMax`). If a filer
+  reports an **exact** value, treat it as `min = max`.
+- Bracket boundaries may differ between systems. The midpoint math does not
+  depend on them, but any validation against known brackets would.
+- Where a filer has no usable amounts, show nothing instead of `$0`.
+
+
 
 ## Sections
 
@@ -29,18 +48,20 @@ I did not know how data is sourced, so I've loosely assumed how it would work. Y
 
 ![Pic of 6 month volumes](assets/6MonthVolumes.png)
 
-1. **Fill in the data source.** Open `volumeSource.ts` and replace the
+1. **Filling in the data source.** Open `volumeSource.ts` and replace the
    `TODO(dev)` stub in `getVolumeSummary(slug)` with a real call. It should
    return:
    ```ts
    { low: number, mid: number, high: number, tradeCount: number }
    ```
-   Two requirements:
-   - It must cover **all** disclosed trades for the politician, not only the
-     ones loaded for the page (the modal currently shows about 40 recent trades).
-   - Preferably compute it **server-side and cache it**, so the client receives
-     one small object. In SQL this is roughly
-     `SUM((amount_min + amount_max) / 2)` grouped by politician.
+
+
+- **Suggestion (not required):** computing the total server-side and caching it
+  means the client receives one small object instead of the full trade list.
+  For example, in SQL this is roughly
+  `SUM((amount_min + amount_max) / 2)` grouped by politician (column names are
+  illustrative).
+
 2. **Wire up the header.** Make sure `PortfolioModalHeader.tsx` is rendered where
    the modal title currently is. It reuses the heading's existing classes, so the
    volume text inherits the site's font, size, weight, and color.
@@ -59,20 +80,5 @@ I did not know how data is sourced, so I've loosely assumed how it would work. Y
 >
 > **Chambers:** House and Senate filings come from different systems. Confirm both get the same treatment.
 
-## Open questions for the team
-
-1. **Data source:** where do the full trade histories live (database table,
-   upstream API)?
-2. **Scope:** should the number cover all trades or only the ones counted in the
-   "disclosed trades" subtitle? If they differ, consider a label like
-   "Lifetime volume".
-3. **Amended filings:** amendments can re-list earlier trades. Dedupe by trade
-   ID if one is available, or volume will be overstated.
-4. **Options and partial sales:** decide whether exercises, expirations, and
-   partial sales count toward volume.
-5. **Top bracket:** "Over $50,000,000" has no upper bound. The prototype counted
-   it at its floor.
-6. **Chambers:** House and Senate filings come from different systems. Confirm
-   both get the same treatment.
-
+Thank you for taking the time to view this. Hopefully something can be taken from this and applied to improve the UX of the site. 
 
