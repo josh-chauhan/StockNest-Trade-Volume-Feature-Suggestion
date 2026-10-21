@@ -1,4 +1,8 @@
-// tradeVolume.ts
+/*
+ * Purpose: Does the pure math. Turns a list of trades
+ * into a single figure, then turns figure into display text.
+ */
+
 export type VolumeMode = 'low' | 'mid' | 'high';
 
 export interface Trade {
@@ -11,9 +15,11 @@ export interface Trade {
 
 export function tradeVolume(trades: Trade[], mode: VolumeMode = 'mid'): number {
   return trades.reduce((sum, t) => {
+    // Missing amount -> treat as 0 so one bad record can't produce NaN.
     const lo = t.amountMin ?? 0;
+    // Missing max -> fall back to min (covers filers who report one exact value).
     const hi = t.amountMax ?? lo;
-    return sum + (mode === 'low' ? lo : mode === 'high' ? hi : (lo + hi) / 2);
+    return sum + (mode === 'low' ? lo : mode === 'high' ? hi : (lo + hi) / 2);  // mid by default
   }, 0);
 }
 
